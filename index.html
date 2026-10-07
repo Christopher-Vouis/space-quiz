@@ -506,7 +506,7 @@
         <button class="restart-button" id="restart-button" type="button">Play again <span aria-hidden="true">↻</span></button>
       </div>
     </section>
-    <p class="footer-note">A little space knowledge goes a long way ✨</p>
+    <p class="footer-note">Use 1–4 to answer, then press Enter to continue ✨</p>
   </main>
 
   <script>
@@ -583,6 +583,27 @@
     let questionIndex = 0;
     let score = 0;
     let answered = false;
+
+    function shouldIgnoreKeyboardShortcut() {
+      const activeElement = document.activeElement;
+      if (!activeElement || activeElement === document.body) {
+        return false;
+      }
+
+      if (activeElement.isContentEditable) {
+        return true;
+      }
+
+      if (activeElement.closest(".answer")) {
+        return false;
+      }
+
+      if (activeElement.matches("button, input, textarea, select, summary, [role='button'], [role='option'], a[href]")) {
+        return true;
+      }
+
+      return false;
+    }
 
     function renderQuestion() {
       const current = questions[questionIndex];
@@ -673,6 +694,36 @@
         questionIndex += 1;
         renderQuestion();
         questionElement.focus({ preventScroll: true });
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      if (/^[1-4]$/.test(event.key)) {
+        if (answered || shouldIgnoreKeyboardShortcut()) {
+          return;
+        }
+
+        event.preventDefault();
+        chooseAnswer(Number(event.key) - 1);
+        return;
+      }
+
+      if (event.key === "Enter" && answered && !nextButton.hidden) {
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement === nextButton || activeElement === document.getElementById("restart-button"))) {
+          return;
+        }
+
+        if (shouldIgnoreKeyboardShortcut()) {
+          return;
+        }
+
+        event.preventDefault();
+        nextButton.click();
       }
     });
 
